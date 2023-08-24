@@ -8,21 +8,27 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUserById = (req, res) => {
   const { userId } = req.params;
+
   if (userId.length !== 24) {
-    res.status(404).send({ message: 'Некорректный идентификатор пользователя' });
+    res.status(400).send({ message: 'Некорректный идентификатор карточки' });
     return;
   }
+
   User.findById(userId)
-    .orFail(new Error('DocumentNotFoundError'))
+    .lean()
     .then((user) => {
+      if (!user) {
+        res.status(404).send({ message: 'Некорректный идентификатор пользователя' });
+        return;
+      }
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'DocumentNotFoundError') {
-        res.status(400).send({ message: 'Некорректный идентификатор пользователя' });
-        return;
+      if (err.name === 'CastError') {
+        res.status(404).send({ message: 'Некорректный идентификатор пользователя' });
+      } else {
+        res.status(500).send({ message: 'Произошла ошибка на сервере' });
       }
-      res.status(500).send({ message: 'произошла ошибка на сервере' });
     });
 };
 
