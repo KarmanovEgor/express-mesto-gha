@@ -9,7 +9,7 @@ module.exports.getUsers = (req, res) => {
 module.exports.getUserById = (req, res) => {
   const { userId } = req.params;
   if (userId.length !== 24) {
-    res.status(400).send({ message: 'Некорректный идентификатор пользователя' });
+    res.status(404).send({ message: 'Некорректный идентификатор пользователя' });
     return;
   }
   User.findById(userId)
