@@ -6,13 +6,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'поле должно быть заполнено'],
       minlength: [2, 'чувак , минимум 2 символа'],
-      maxlength: [30, 'чувак , максимум 30 символов'],
+      maxlength: [31, 'чувак , максимум 30 символов'],
     },
     about: {
       type: String,
       required: [true, 'поле должно быть заполнено'],
       minlength: [2, 'чувак , минимум 2 символа'],
-      maxlength: [30, 'чувак , максимум 30 символов'],
+      maxlength: [31, 'чувак , максимум 30 символов'],
     },
     avatar: {
       type: String,
