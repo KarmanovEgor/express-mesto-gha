@@ -7,7 +7,7 @@ module.exports.createCard = (req, res) => {
       Card.findById(card._id)
         .populate('owner')
         .then((data) => res.status(201).send(data))
-        .catch(() => res.status(404).send({ message: 'бро, карточка с данным _id не найдена' }));
+        .catch(() => res.status(500).send({ message: 'бро, ошибка сервера' }));
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -56,7 +56,7 @@ module.exports.likeCard = (req, res) => {
         }
         res.send(card);
       })
-      .catch(() => res.status(404).send({ message: 'бро, карточка по данному _id не найдена' }));
+      .catch(() => res.status(500).send({ message: 'бро, ошибка сервера' }));
   } else {
     res.status(400).send({ message: 'бро, некорректный _id ' });
   }
@@ -72,7 +72,7 @@ module.exports.dislikeCard = (req, res) => {
         }
         res.send(card);
       })
-      .catch(() => res.status(404).send({ message: 'бро, карточка по данному _id не найдена' }));
+      .catch(() => res.status(500).send({ message: 'бро, ошибка сервера' }));
   } else {
     res.status(400).send({ message: 'бро, некорректный _id ' });
   }

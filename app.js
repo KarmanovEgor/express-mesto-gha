@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+const helmet = require('helmet');
+
 const bodyParser = require('body-parser');
 
 const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/testdb' } = process.env;
@@ -14,7 +17,7 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 
 });
-
+app.use(helmet());
 app.use((req, res, next) => {
   req.user = {
     _id: '64e6f7b280965de26c4703e6', // вставьте сюда _id созданного в предыдущем пункте пользователя

@@ -23,10 +23,7 @@ const cardSchema = new mongoose.Schema(
       ref: 'user',
       required: [true, 'поле должно быть заполнено'],
     },
-    likes: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
-    },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createAt: {
       type: Date,
       default: Date.now,
