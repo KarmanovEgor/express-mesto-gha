@@ -55,11 +55,11 @@ module.exports.editUser = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'DocumentNotFoundError') {
-        res.status(400).send({ message: 'некорректные данные были переданы' });
+      if (err.name === 'DocumentNotFoundError') {
+        res.status(404).send({ message: 'ресурс не найден' });
         return;
       }
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
         return;
       }
@@ -76,11 +76,11 @@ module.exports.editUserAvatar = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'DocumentNotFoundError') {
-        res.status(400).send({ message: 'некорректные данные были переданы' });
+      if (err.name === 'DocumentNotFoundError') {
+        res.status(404).send({ message: 'ресурс не найден' });
         return;
       }
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
         return;
       }
