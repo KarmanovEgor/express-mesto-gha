@@ -1,89 +1,80 @@
+const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
+const { default: mongoose } = require('mongoose');
 const User = require('../models/user');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send(users))
-    .catch(() => res.status(500).send({ message: 'произошла ошибка на сервере' }));
+    .then((users) => res.status(HTTP_STATUS_OK).send(users))
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
-  const { userId } = req.params;
-
-  if (userId.length !== 24) {
-    res.status(400).send({ message: 'Некорректный идентификатор карточки' });
-    return;
-  }
-
-  User.findById(userId)
-    .lean()
+module.exports.getUserById = (req, res, next) => {
+  User.findById(req.params.userId)
+    .orFail()
     .then((user) => {
-      if (!user) {
-        res.status(404).send({ message: 'Некорректный идентификатор пользователя' });
-        return;
-      }
-      res.send(user);
+      res.status(HTTP_STATUS_OK).send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({ message: 'некорректные данные были переданы' });
+      if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError(`Некорректный идентификатор пользователя: ${req.params.userId}`));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError(`Пользователь по указанному идентификатору: ${req.params.userId} не найден`));
       } else {
-        res.status(500).send({ message: 'Произошла ошибка на сервере' });
+        next(err);
       }
     });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
-    .then((user) => res.status(201).send(user))
+    .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: 'произошла ошибка на сервере' });
+        next(err);
       }
     });
 };
 
-module.exports.editUser = (req, res) => {
+module.exports.editUser = (req, res, next) => {
   const { name, about } = req.body;
   const { _id } = req.user;
 
   User.findByIdAndUpdate(_id, { name, about }, { new: true, runValidators: true })
-    .orFail(new Error('DocumentNotFoundError'))
+    .orFail()
     .then((user) => {
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        res.status(404).send({ message: 'ресурс не найден' });
-        return;
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Пользователь по указанному идентификатору не найден'));
+      } else {
+        next(err);
       }
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
-        return;
-      }
-      res.status(500).send({ message: 'Ошибка на сервере' });
     });
 };
-module.exports.editUserAvatar = (req, res) => {
+module.exports.editUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const { _id } = req.user;
 
   User.findByIdAndUpdate(_id, { avatar }, { new: true, runValidators: true })
-    .orFail(new Error('DocumentNotFoundError'))
+    .orFail()
     .then((user) => {
-      res.send(user);
+      res.status(HTTP_STATUS_OK).send(user);
     })
     .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        res.status(404).send({ message: 'ресурс не найден' });
-        return;
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Пользователь по указанному идентификатору не найден'));
+      } else {
+        next(err);
       }
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
-        return;
-      }
-      res.status(500).send({ message: 'Ошибка на сервере' });
     });
 };
