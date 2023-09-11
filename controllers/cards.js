@@ -2,6 +2,7 @@ const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const { default: mongoose } = require('mongoose'); const Card = require('../models/card');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
@@ -34,16 +35,29 @@ module.exports.getCards = (req, res, next) => {
     .catch(next);
 };
 module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .orFail()
-    .then(() => {
-      res.status(HTTP_STATUS_OK).send({ message: 'Карточка удалена' });
+  Card.findById(req.params.cardId)
+    .then((card) => {
+      if (!card.owner.equals(req.user._id)) {
+        throw new ForbiddenError('бро, чужая карточка');
+      }
+      Card.deleteOne(card)
+        .orFail()
+        .then(() => {
+          res.status(HTTP_STATUS_OK).send({ message: 'Карточка удалена' });
+        })
+        .catch((err) => {
+          if (err instanceof mongoose.Error.DocumentNotFoundError) {
+            next(new NotFoundError(`карточка с данный идентификатором не найдена ${req.params.cardId}`));
+          } else if (err instanceof mongoose.Error.CastError) {
+            next(new BadRequestError(`Некорректный идентификатор карточки: ${req.params.cardId}`));
+          } else {
+            next(err);
+          }
+        });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+      if (err.name === 'TypeError') {
         next(new NotFoundError(`карточка с данный идентификатором не найдена ${req.params.cardId}`));
-      } else if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError(`Некорректный идентификатор карточки: ${req.params.cardId}`));
       } else {
         next(err);
       }

@@ -1,8 +1,11 @@
 const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const { default: mongoose } = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/ConflictError');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -28,16 +31,25 @@ module.exports.getUserById = (req, res, next) => {
 };
 
 module.exports.createUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
-    .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        next(new BadRequestError(err.message));
-      } else {
-        next(err);
-      }
-    });
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    })
+      .then((user) => res.status(HTTP_STATUS_CREATED).send({
+        name: user.name, about: user.about, avatar: user.avatar, email: user.email, _id: user._id,
+      }))
+      .catch((err) => {
+        if (err instanceof mongoose.Error && err.code === 11000) {
+          next(new ConflictError(`Пользователь с данным email: ${email} уже зареган`));
+        } else if (err instanceof mongoose.Error.ValidationError) {
+          next(new BadRequestError(err.message));
+        } else {
+          next(err);
+        }
+      }));
 };
 
 module.exports.editUser = (req, res, next) => {
@@ -77,4 +89,22 @@ module.exports.editUserAvatar = (req, res, next) => {
         next(err);
       }
     });
+};
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      // создадим токен
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+      // вернём токен
+      res.send({ token });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+module.exports.getMe = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => res.status(HTTP_STATUS_OK).send(user))
+    .catch(next);
 };

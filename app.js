@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-
+const { errors } = require('celebrate');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const helmet = require('helmet');
 
@@ -18,20 +18,13 @@ mongoose.connect(DB_URL, {
 
 });
 app.use(helmet());
-app.use((req, res, next) => {
-  req.user = {
-    _id: '64eb3a691f3d7f216e651d4e', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
 
-  next();
-});
-
-app.use('/users', require('./routes/users'));
-app.use('/cards', require('./routes/cards'));
+app.use('/', require('./routes/index'));
 
 app.use('*', (req, res) => {
   res.status(404).send({ message: 'чувак? камон, страница не найдена' });
 });
+app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res
