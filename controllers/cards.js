@@ -8,8 +8,9 @@ module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => {
-      card.populate('owner').execPopulate();
-      res.status(HTTP_STATUS_CREATED).send(card);
+      card.populate('owner')
+        .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
+        .catch(next);
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
@@ -19,6 +20,7 @@ module.exports.createCard = (req, res, next) => {
       }
     });
 };
+
 module.exports.getCards = (req, res, next) => {
   Card.find({})
     .populate(['owner', 'likes'])
