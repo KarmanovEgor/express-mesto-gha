@@ -8,17 +8,8 @@ module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => {
-      Card.findById(card._id)
-        .orFail()
-        .populate('owner')
-        .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
-        .catch((err) => {
-          if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            next(new NotFoundError('карточка по указанному идентификатору не найдена'));
-          } else {
-            next(err);
-          }
-        });
+      card.populate('owner').execPopulate();
+      res.status(HTTP_STATUS_CREATED).send(card);
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
@@ -47,7 +38,7 @@ module.exports.deleteCard = (req, res, next) => {
         })
         .catch((err) => {
           if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            next(new NotFoundError(`карточка с данный идентификатором не найдена ${req.params.cardId}`));
+            next(new NotFoundError(`карточка с данным идентификатором не найдена ${req.params.cardId}`));
           } else if (err instanceof mongoose.Error.CastError) {
             next(new BadRequestError(`Некорректный идентификатор карточки: ${req.params.cardId}`));
           } else {
@@ -56,8 +47,8 @@ module.exports.deleteCard = (req, res, next) => {
         });
     })
     .catch((err) => {
-      if (err.name === 'TypeError') {
-        next(new NotFoundError(`карточка с данный идентификатором не найдена ${req.params.cardId}`));
+      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError(`карточка с данным идентификатором не найдена ${req.params.cardId}`));
       } else {
         next(err);
       }

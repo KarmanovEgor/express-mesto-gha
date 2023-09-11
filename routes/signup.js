@@ -13,6 +13,6 @@ router.post('/', celebrate({
     // avatar: Joi.string().allow('').pattern(new RegExp(validator.isURL())),
     avatar: Joi.string().pattern(/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/),
     about: Joi.string().min(2).max(30),
-  }).unknown(true),
+  }),
 }), createUser);
 module.exports = router;
