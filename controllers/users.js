@@ -42,7 +42,7 @@ module.exports.createUser = (req, res, next) => {
         name: user.name, about: user.about, avatar: user.avatar, email: user.email, _id: user._id,
       }))
       .catch((err) => {
-        if (err instanceof mongoose.Error && err.code === 11000) {
+        if (err.code === 11000) {
           next(new ConflictError(`Пользователь с данным email: ${email} уже зареган`));
         } else if (err instanceof mongoose.Error.ValidationError) {
           next(new BadRequestError(err.message));
